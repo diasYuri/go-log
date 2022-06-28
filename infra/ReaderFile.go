@@ -2,8 +2,8 @@ package infra
 
 import (
 	"bufio"
-	"fmt"
 	"io"
+	"log"
 )
 
 type ReaderFile struct {
@@ -18,15 +18,10 @@ func NewReaderFile(reader io.Reader) *ReaderFile {
 }
 
 func (r *ReaderFile) ReadLog() (string, error) {
-
-	for {
-
-		line, err := r.reader.ReadString('\n')
-		if err != nil {
-			fmt.Println(err)
-			return "", err
-		}
-
-		return line, nil
+	line, err := r.reader.ReadString('\n')
+	if err != nil {
+		log.Println(err)
+		return "", err
 	}
+	return line, nil
 }
