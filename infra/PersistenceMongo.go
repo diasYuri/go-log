@@ -18,9 +18,8 @@ type PersistenceMongo struct {
 func NewPersistenceMongo(client *mongo.Client, database string, collection string) *PersistenceMongo {
 	return &PersistenceMongo{
 		clientMongo: client,
-		//collection:  client.Database(database).Collection(collection),
-		database:   database,
-		collection: collection,
+		database:    database,
+		collection:  collection,
 	}
 }
 

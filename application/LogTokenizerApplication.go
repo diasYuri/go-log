@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"lfa.com/logs-master/application/domain"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -23,6 +24,7 @@ func NewLogTokenizerApplication(logRegexPattern string, inputLogChan chan string
 
 func (l *LogTokenizerApplication) Execute(requestEndChan chan byte, signalEndChan chan byte) {
 	var count int = 0
+
 	for {
 		select {
 		case <-requestEndChan:
@@ -30,12 +32,12 @@ func (l *LogTokenizerApplication) Execute(requestEndChan chan byte, signalEndCha
 			fmt.Printf("Contador de tokenizador: %d\n", count)
 			return
 		case logLine := <-l.inputLogChannel:
-			l.Tokenizer(logLine, &count)
+			l.Tokenizer(LogMapper, logLine, &count)
 		}
 	}
 }
 
-func (l *LogTokenizerApplication) Tokenizer(logLine string, count *int) {
+func (l *LogTokenizerApplication) Tokenizer(mapper func(map[string]string) domain.Log, logLine string, count *int) {
 	logTokens := l.regexCompiled.FindStringSubmatch(logLine)
 
 	if len(logTokens) <= 0 {
@@ -50,15 +52,19 @@ func (l *LogTokenizerApplication) Tokenizer(logLine string, count *int) {
 		}
 	}
 
-	time, _ := time.Parse("", mapLog["date"])
-
-	log := domain.Log{
-		Date:    time,
-		Level:   mapLog["level"],
-		Header:  mapLog["header"],
-		Message: mapLog["message"],
-	}
+	log := mapper(mapLog)
 
 	*count++
 	l.outputLogChannel <- log
+}
+
+func LogMapper(mapLog map[string]string) domain.Log {
+	time, _ := time.Parse("2006-01-02 15:04:05", string(mapLog["date"]))
+
+	return domain.Log{
+		Date:    time,
+		Level:   strings.TrimSpace(mapLog["level"]),
+		Header:  strings.TrimSpace(mapLog["header"]),
+		Message: strings.TrimSpace(mapLog["message"]),
+	}
 }

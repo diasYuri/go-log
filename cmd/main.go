@@ -12,10 +12,9 @@ import (
 	"lfa.com/logs-master/infra"
 	"log"
 	"os"
+	"strconv"
 	"time"
 )
-
-const pattern string = `(?P<date>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{0,3})[ ]{1,2}-[ ]{1,2}(?P<level>[A-Z]* )[ ]{1,2}(?P<header>\[.*?] )[ ]{0,1}-[ ]{0,2}(?P<message>.*)`
 
 func main() {
 	ctx := context.Background()
@@ -79,7 +78,7 @@ func StartJobPersistence(job *Job.LogPersistenceJob, requestEndChan chan byte, s
 	var listRequestEndSignalPersistenceJob []chan byte
 	var listEndSignalPersistenceJob []chan byte
 
-	concurrencyPersistenceJob := 10
+	concurrencyPersistenceJob, _ := strconv.Atoi(os.Getenv("CONCURRENCY_PERSISTENCE"))
 	for i := 0; i < concurrencyPersistenceJob; i++ {
 		requestEndSignalPersistenceJob := make(chan byte)
 		endSignalPersistenceJob := make(chan byte)
@@ -121,7 +120,8 @@ func FactoryLogTokenizerApplication(stringLogChan chan string, logChan chan doma
 }
 
 func FactoryLogPersistenceApplication(logChan chan domain.Log, logBatchChan chan []interface{}) *application.LogBatchForPersistenceApplication {
-	return application.NewLogBatchForPersistenceApplication(logChan, logBatchChan, 10000)
+	batchSize, _ := strconv.Atoi(os.Getenv("BATCH_SIZE"))
+	return application.NewLogBatchForPersistenceApplication(logChan, logBatchChan, batchSize)
 }
 func FactoryLogPersistenceJob(logBatchChan chan []interface{}, client *mongo.Client, database string, collection string) *Job.LogPersistenceJob {
 	persistence := infra.NewPersistenceMongo(client, database, collection)
